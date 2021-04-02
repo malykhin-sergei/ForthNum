@@ -1,7 +1,8 @@
 \ Provides compatibility for some common but non-standard words.
 \ See ANSI document X3.215-1994 (i.e., the ANS Forth standard).
 
-: [ifundef] bl word find nip 0= postpone [if] ; immediate
+: [ifundef] bl word find nip 0=  postpone [if] ; immediate
+: [ifdef]   bl word find nip 0<> postpone [if] ; immediate
 
 \ Strings words
 
@@ -13,6 +14,54 @@
 [ifundef] place
 : place ( c-addr1 u c-addr2 )
   2dup c! char+ swap move ;
+[then]
+
+[ifundef] required
+\ Taken from https://forth-standard.org/standard/file/REQUIRED
+
+: save-mem ( addr1 u -- addr2 u ) \ gforth
+\ copy a memory block into a newly allocated region in the heap
+   swap >r
+   dup allocate throw
+   swap 2dup r> rot rot move ;
+
+: name-add ( addr u listp -- )
+   >r save-mem ( addr1 u )
+   3 cells allocate throw \ allocate list node
+   r@ @ over ! \ set next pointer
+   dup r> ! \ store current node in list var
+   cell+ 2! ;
+
+: name-present? ( addr u list -- f )
+   rot rot 2>r begin ( list r: addr u )
+     dup
+   while
+     dup cell+ 2@ 2r@ compare 0= if
+       drop 2r> 2drop true exit
+     then
+     @
+   repeat
+   ( drop 0 ) 2r> 2drop ;
+
+: name-join ( addr u list -- )
+   >r 2dup r@ @ name-present? if
+     r> drop 2drop
+   else
+     r> name-add
+   then ;
+
+variable included-names 0 included-names !
+
+: included ( i*x addr u -- j*x )
+   2dup included-names name-join
+   included ;
+
+: required ( i*x addr u -- i*x )
+   2dup included-names @ name-present? 0= if
+     included
+   else
+     2drop
+   then ;
 [then]
 
 \ Floats
