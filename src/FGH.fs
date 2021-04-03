@@ -1,19 +1,20 @@
-\ C. Clay Marston and Gabriel G. BalintKurti. 
-\ The Fourier grid Hamiltonian method for bound state 
-\ eigenvalues and eigenfunctions // J. Chem. Phys. 91, 3571 (1989); 
+\ C. Clay Marston and Gabriel G. BalintKurti.
+\ The Fourier grid Hamiltonian method for bound state
+\ eigenvalues and eigenfunctions // J. Chem. Phys. 91, 3571 (1989);
 \ doi: 10.1063/1.456888
 
-s" compat.fs"   required
-s" vars.fs"     required
-s" arrays.fs"   required
-s" sort.fs"     required
-s" matrices.fs" required
-s" jacobi.fs"   required
+s" compat.fs"   included
+s" vars.fs"     included
+s" struct.fs"   included
+s" arrays.fs"   included
+s" sort.fs"     included
+s" matrices.fs" included
+s" jacobi.fs"   included
 
-: array-print 
-  >r 
+: array-print
+  >r
   r@ .array-data @
-  r> .array-size @ 0 
+  r> .array-size @ 0
   do dup f@ f. float+ loop drop ;
 
 : matrix-print
@@ -26,7 +27,7 @@ s" jacobi.fs"   required
 
 : matrix-scale!
   >r
-  r@ .matrix-data @ 
+  r@ .matrix-data @
   r@ .matrix-cols @ r> .matrix-rows @ * 0
   do dup f@ fover f* dup f! float+
   loop drop fdrop ;
@@ -106,14 +107,14 @@ variables( M diag )
 
 \ Atomic units
 
-: units: 
+: units:
   create  f, does> f@ f* ;
 
 1822.8885e units: amu
 
 \ Dimension of the eigenproblem. NB: it should be an odd number!
 
-101 constant N
+151 constant N
 
 N N float-size matrix: H                            H matrix-allocate
 N N float-size matrix: PSI                        PSI matrix-allocate
@@ -131,7 +132,7 @@ fvariables( mu x0 D beta dx )
 0.1994e (D)     \ is the well depth (defined relative to the dissociated atoms)
 1.189e  (beta)  \ controls the 'width' of the potential
 
-( Hydrogen atom mass is ) 1.00794e amu ( Oxygen atom mass is )  15.9994e  amu 
+( Hydrogen atom mass is ) 1.00794e amu ( Oxygen atom mass is )  15.9994e  amu
 ( and their ) reduced-mass (mu)
 
 \ E(x) = D*(exp(-β*(x-x₀))-1)^2 - D
@@ -139,20 +140,20 @@ fvariables( mu x0 D beta dx )
 : morse-potential
   x0 fswap f- beta f* fexp 1.0e f- f**2 1.0e f- D f* ;
 
-( Take x from ) 2.0e x0 f- ( to ) 12.0e x0 f+ 
+( Take x from ) 2.0e x0 f- ( to ) 12.0e x0 f+
 
-( Tabulate ) xgrid mesh! ( with step size ) (dx) 
+( Tabulate ) xgrid mesh! ( with step size ) (dx)
 \ Than calculate matrix elements using eq. 26, 27
 
-dx T FGH! 
+dx T FGH!
 
-\ Build the hamiltonian matrix H, known it is Toeplitz matrix, from the array 
+\ Build the hamiltonian matrix H, known it is Toeplitz matrix, from the array
 
 T H toeplitz!
 
 ( Calculate ) ' morse-potential ( on ) xgrid ( then ) Vx tabulate!
 
-( Kinetic energy operator is ) -1.0e mu 2.0e f* f/ H matrix-scale! 
+( Kinetic energy operator is ) -1.0e mu 2.0e f* f/ H matrix-scale!
 
 \ Add potential to the diagonal of the hamiltonian:
 
@@ -161,7 +162,7 @@ Vx H +diag!
 \ Solve eigenproblem
 
 H PSI eig!
- 
+
 \ Sort eigenvalues
 
 levels-order energy-levels PSI H eigsort!
@@ -175,14 +176,14 @@ fvariables( omega delta )
   2.0e D f* mu f/ fsqrt beta f* (omega)
   omega f**2 4.0e D f* f/       (delta)
   level  s>f 0.5e f+      omega f*
-  level  s>f 0.5e f+ f**2 delta f* fnegate 
+  level  s>f 0.5e f+ f**2 delta f* fnegate
   D f- f+ ;
 
 : compare-results ( n )
-  0 do ." level = "     i . 
-       ." exact = "     i exact-solution f. 
+  0 do ." level = "     i .
+       ." exact = "     i exact-solution f.
        ." numerical = " i energy-levels fa@ f.
-       ." error = "     i exact-solution i energy-levels fa@ f- f.
+       ." error = "     i exact-solution i energy-levels fa@ f- fabs f.
        cr
   loop ;
 
@@ -190,9 +191,9 @@ cr
 ." ================================================================== " cr
 ." Results of the Fourier grid Hamiltonian method applied to the      " cr
 ." Morse potential of the OH-bond                                     " cr cr
-."            E(x) = D*(exp(-β*(x-x₀))-1)^2 - D,                      " cr cr 
+."            E(x) = D*(exp(-β*(x-x₀))-1)^2 - D,                      " cr cr
 ." where D = " D f. ." β = " beta f. ." x₀ = " x0 f.                    cr
-." The grid is taken from " 0 xgrid fa@ f. ." to " N 1- xgrid fa@ f.    
+." The grid is taken from " 0 xgrid fa@ f. ." to " N 1- xgrid fa@ f.
 ." with " N . ." points and step size " dx f.                           cr cr
 
 10 compare-results

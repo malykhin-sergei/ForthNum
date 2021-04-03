@@ -1,8 +1,9 @@
 \ Provides compatibility for some common but non-standard words.
 \ See ANSI document X3.215-1994 (i.e., the ANS Forth standard).
 
-: [ifundef] bl word find nip 0=  postpone [if] ; immediate
-: [ifdef]   bl word find nip 0<> postpone [if] ; immediate
+: [defined] bl word find nip 0<> ; immediate
+: [ifdef]   POSTPONE [defined]    POSTPONE [if] ; immediate
+: [ifundef] POSTPONE [defined] 0= POSTPONE [if] ; immediate
 
 \ Strings words
 
